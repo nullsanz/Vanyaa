@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maaf ya Achaaa 🥺</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #ffe4e6; /* Soft Pink background */
+            overflow-x: hidden;
+        }
+
+        .slide-enter {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .btn-shadow {
+            box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom scrollbar hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 text-gray-800">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Main Card Container -->
+    <div id="main-card" class="bg-white max-w-md w-full rounded-3xl shadow-2xl p-8 relative overflow-hidden min-h-[500px] flex flex-col justify-between transition-all duration-300">
+        
+        <!-- Decoration Circles -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-pink-100 rounded-full opacity-50 z-0"></div>
+        <div class="absolute -bottom-10 -left-10 w-24 h-24 bg-blue-100 rounded-full opacity-50 z-0"></div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-100 h-2 rounded-full mb-6 z-10">
+            <div id="progress-bar" class="bg-pink-400 h-2 rounded-full transition-all duration-500" style="width: 20%"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div id="content-area" class="z-10 flex-grow flex flex-col items-center justify-center text-center">
+            <!-- Content will be injected here via JS -->
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div id="nav-area" class="z-10 mt-6 flex justify-between w-full hidden">
+            <button onclick="prevSlide()" class="px-4 py-2 text-gray-400 hover:text-gray-600 font-semibold text-sm transition-colors">Kembali</button>
+            <button onclick="nextSlide()" class="px-6 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-full font-bold shadow-lg transform active:scale-95 transition-all btn-shadow">Lanjut ➔</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA SLIDES ---
+        const slides = [
+            {
+                emoji: "👋",
+                title: "Halo, Achaaa...",
+                text: "Atau Vanya Anisa (biar sopan hehe).<br>Boleh minta waktunya sebentar? Ada sesuatu yang ngeganjel banget di hati Kak Anul dan harus dilurusin.",
+                btnText: "Boleh, apa tuh?"
+            },
+            {
+                emoji: "😔",
+                title: "Aku Minta Maaf",
+                text: "Aku tau situasinya lagi gak enak gara-gara <b>circle pertemananku</b>. Aku sadar temen-temenku mungkin kelakuannya... yah, begitulah. Buruk.",
+                btnText: "Terus?"
+            },
+            {
+                emoji: "🙅‍♂️",
+                title: "Tapi Please Inget Ini...",
+                text: "Ibarat ada satu tomat busuk di keranjang, bukan berarti <b>Kak Anul</b> juga busuk, Cha. Aku gak ikutan hal-hal buruk yang mereka lakuin. Aku tetep jadi diri aku sendiri.",
+                btnText: "Hmm, oke..."
+            },
+            {
+                emoji: "👑",
+                title: "Aku Respect Banget sama Cewek",
+                text: "Sumpah✌️. Isu kalau aku merendahkan wanita itu <b>SALAH BESAR</b>. Aku dididik buat menghormati wanita. Please jangan samain aku sama mereka ya?",
+                btnText: "Beneran nih?"
+            },
+            {
+                emoji: "🥺",
+                title: "Jadi...",
+                text: "Maukah kamu maafin kesalahan aku (yang salah pilih temen main) dan percaya sama aku lagi, Achaaa?",
+                specialInteraction: true 
+            },
+            {
+                emoji: "🎉",
+                title: "Yeeaaay! Makasih!",
+                text: "Makasih udah mau dengerin dan ngertiin, Cha! <br>Janji bakal lebih selektif lagi. <br><br><b>Have a nice day, Vanya! ✨</b><br><br><span class='text-pink-500 font-bold'>- Kak Anul 🐢</span>",
+                isFinal: true
+            }
+        ];
+
+        let currentSlide = 0;
+
+        // --- RENDER FUNCTION ---
+        function renderSlide() {
+            const content = document.getElementById('content-area');
+            const nav = document.getElementById('nav-area');
+            const progress = document.getElementById('progress-bar');
+            const slide = slides[currentSlide];
+
+            // Update Progress Bar
+            const percent = ((currentSlide + 1) / slides.length) * 100;
+            progress.style.width = `${percent}%`;
+
+            // Clear content with fade effect
+            content.innerHTML = '';
+            content.classList.remove('slide-enter');
+            void content.offsetWidth; // trigger reflow
+            content.classList.add('slide-enter');
+
+            // --- HTML GENERATION BASED ON SLIDE TYPE ---
+            
+            if (slide.specialInteraction) {
+                // THE INTERACTIVE SLIDE (YES/NO)
+                nav.classList.add('hidden'); // Hide default nav
+                content.innerHTML = `
+                    <div class="text-6xl mb-4 floating">${slide.emoji}</div>
+                    <h2 class="text-2xl font-bold mb-2 text-pink-600">${slide.title}</h2>
+                    <p class="text-gray-600 mb-8 leading-relaxed">${slide.text}</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 w-full justify-center items-center relative h-32 sm:h-auto">
+                        <button onclick="acceptApology()" class="w-full sm:w-auto px-8 py-3 bg-green-500 hover:bg-green-600 text-white rounded-full font-bold shadow-lg transform hover:scale-105 transition-all z-20">
+                            Iya, Dimaafin ❤️
+                        </button>
+                        
+                        <button id="btn-no" onmouseover="dodgeButton()" onclick="dodgeButton()" class="w-full sm:w-auto px-8 py-3 bg-gray-200 text-gray-500 rounded-full font-bold transition-all absolute sm:static mt-16 sm:mt-0">
+                            Enggak 😠
+                        </button>
+                    </div>
+                `;
+            } else if (slide.isFinal) {
+                // FINAL SLIDE
+                nav.classList.add('hidden');
+                content.innerHTML = `
+                    <div class="text-6xl mb-4 floating">${slide.emoji}</div>
+                    <h2 class="text-2xl font-bold mb-2 text-pink-600">${slide.title}</h2>
+                    <p class="text-gray-600 mb-6 leading-relaxed">${slide.text}</p>
+                    <div class="mt-4 p-4 bg-pink-50 rounded-xl border border-pink-100">
+                        <p class="text-xs text-gray-400">Website ini dibuat khusus sebagai tanda penyesalan yang tulus.</p>
+                    </div>
+                `;
+                startConfetti();
+            } else {
+                // NORMAL SLIDES
+                nav.classList.remove('hidden');
+                
+                // Logic for "Kembali" button visibility
+                const prevBtn = nav.querySelector('button:first-child');
+                prevBtn.style.visibility = currentSlide === 0 ? 'hidden' : 'visible';
+
+                content.innerHTML = `
+                    <div class="text-6xl mb-4 floating">${slide.emoji}</div>
+                    <h2 class="text-2xl font-bold mb-2 text-pink-600">${slide.title}</h2>
+                    <p class="text-gray-600 leading-relaxed">${slide.text}</p>
+                `;
+                
+                // Update Next Button Text
+                const nextBtn = nav.querySelector('button:last-child');
+                nextBtn.innerText = slide.btnText + ' ➔';
+            }
+        }
+
+        // --- NAVIGATION LOGIC ---
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                renderSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                renderSlide();
+            }
+        }
+
+        function acceptApology() {
+            currentSlide++;
+            renderSlide();
+        }
+
+        // --- FUNNY BUTTON LOGIC (THE DODGE) ---
+        function dodgeButton() {
+            const btnNo = document.getElementById('btn-no');
+            const container = document.getElementById('content-area');
+            
+            // Get container dimensions
+            const rect = container.getBoundingClientRect();
+            
+            // Random position within container limits
+            // We limit movement to avoid it disappearing completely or overlapping the YES button too much
+            const maxX = 150; 
+            const minX = -150;
+            const maxY = 100;
+            const minY = -100;
+
+            const randomX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+            const randomY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+
+            // Apply transformation
+            btnNo.style.position = 'absolute';
+            btnNo.style.transform = `translate(${randomX}px, ${randomY}px)`;
+            
+            // Change text for extra humor
+            const texts = ["Yakin?", "Jangan dong!", "Please...", "Pencet yang ijo!", "Eits gak kena!"];
+            btnNo.innerText = texts[Math.floor(Math.random() * texts.length)];
+            btnNo.style.backgroundColor = "#ffdede";
+            btnNo.style.color = "#ff4d4d";
+        }
+
+        // --- CONFETTI LOGIC (Simple Implementation) ---
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const colors = ['#f472b6', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa'];
+
+            for (let i = 0; i < 150; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    rotation: Math.random() * 360,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4,
+                    speed: Math.random() * 3 + 2,
+                    oscillation: Math.random() * 2
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                pieces.forEach(p => {
+                    p.y += p.speed;
+                    p.rotation += p.speed;
+                    p.x += Math.sin(p.y * 0.01) * p.oscillation;
+
+                    if (p.y > canvas.height) p.y = -20;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        // Handle resize for confetti
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('confetti-canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Initialize
+        renderSlide();
+
+    </script>
+</body>
+</html>
